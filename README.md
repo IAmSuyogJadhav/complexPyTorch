@@ -1,6 +1,9 @@
+## To-Do
+* There is apparently a problem with backpropagation of complex layers. The gradients calculated by torch's autograd do not match with what a complex differentiation gives. Need to implement a proper backward function for that purpose.
+
 # complexPyTorch
 
-A high-level toolbox for using complex valued neural networks in PyTorch.
+A high-level toolbox for using complex valued neural networks in PyTorch. This fork implements a few more layers and some deep learning architectures. The following description is as-is from the original repository.
 
 ## Complex Valued Networks with PyTorch
 
@@ -121,4 +124,4 @@ for epoch in range(50):
 
 ## Acknowledgments
 
-I want to thank Piotr Bialecki for his invaluable help on the PyTorch forum.
+I want to thank Piotr Bialecki for his invaluable help on the PyTorch forum
