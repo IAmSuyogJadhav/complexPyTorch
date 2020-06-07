@@ -1,5 +1,5 @@
 ## To-Do
-* There is apparently a problem with backpropagation of complex layers. The gradients calculated by torch's autograd do not match with what a complex differentiation gives. Need to implement a proper backward function for that purpose.
+* There is apparently a problem with backpropagation of complex layers ([see the issue](https://github.com/wavefrontshaping/complexPyTorch/issues/3)). The gradients calculated by torch's autograd do not match with what a complex differentiation gives. Need to implement a proper backward function for that purpose.
 
 # complexPyTorch
 
