@@ -1,6 +1,6 @@
 import torch
 from torch.nn import Module, init  # init might not work, just ignore it in that case
-from complexPyTorch import nn
+from complexTorch import nn
 
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
