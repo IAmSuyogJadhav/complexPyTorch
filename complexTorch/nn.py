@@ -3,17 +3,18 @@
 """
 Created on Tue Mar 19 10:30:02 2019
 
-@author: Sebastien M. Popoff
+Modifications by: Suyog Jadhav
+Original script author: Sebastien M. Popoff
 
 
 Based on https://openreview.net/forum?id=H1T2hmZAb
 """
 
 import torch
-from torch.nn import Module, Parameter, init, Sequential
+from torch.nn import Module, ModuleList, Parameter, init, Sequential
 from torch.nn import Conv2d, Linear, BatchNorm1d, BatchNorm2d
 from torch.nn import ConvTranspose2d
-from torch.nn.functional import relu, max_pool2d, dropout, dropout2d, avg_pool2d
+from torch.nn.functional import relu, max_pool2d, dropout, dropout2d, avg_pool2d, interpolate
 
 
 def complex_relu(input_r,input_i):
@@ -187,6 +188,27 @@ class NaiveComplexBatchNorm1d(Module):
 
     def forward(self,input_r, input_i):
         return self.bn_r(input_r), self.bn_i(input_i)
+
+    
+class Identity(Module):
+    r"""A placeholder identity operator that is argument-insensitive.
+    Args:
+        args: any argument (unused)
+        kwargs: any keyword argument (unused)
+    Examples::
+        >>> m = nn.Identity(54, unused_argument1=0.1, unused_argument2=False)
+        >>> input = torch.randn(128, 20)
+        >>> output = m(input)
+        >>> print(output.size())
+        torch.Size([128, 20])
+    """
+    def __init__(self, *args, **kwargs):
+        super(Identity, self).__init__()
+
+    @weak_script_method
+    def forward(self, inr, ini):
+        return inr, ini
+
 
 class _ComplexBatchNorm(Module):
 
@@ -391,3 +413,43 @@ class ComplexBatchNorm1d(_ComplexBatchNorm):
 
         del Crr, Cri, Cii, Rrr, Rii, Rri, det, s, t
         return input_r, input_i
+
+
+class ComplexUpsample(Module):
+    r"""Upsamples a given multi-channel 1D (temporal), 2D (spatial) or 3D (volumetric) data. Adapted from pytorch.
+    
+    ** Very rudimentary. Basically interpolates real and imaginary parts separately. Might not be the right way to do it.
+    """
+    __constants__ = ['size', 'scale_factor', 'mode', 'align_corners', 'name']
+    name: str
+    size: _size_any_t
+    scale_factor: _ratio_any_t
+    mode: str
+    align_corners: bool
+
+    def __init__(self, size=None, scale_factor=None, mode='nearest', align_corners=None):
+        super(Upsample, self).__init__()
+        self.name = type(self).__name__
+        self.size = size
+        if isinstance(scale_factor, tuple):
+            self.scale_factor = tuple(float(factor) for factor in scale_factor)
+        else:
+            self.scale_factor = float(scale_factor) if scale_factor else None
+        self.mode = mode
+        self.align_corners = align_corners
+
+    def forward(self, inputr, inputi):
+        return interpolate(inputr, self.size, self.scale_factor, self.mode, self.align_corners), interpolate(inputi, self.size, self.scale_factor, self.mode, self.align_corners)
+
+    def extra_repr(self):
+        if self.scale_factor is not None:
+            info = 'scale_factor=' + str(self.scale_factor)
+        else:
+            info = 'size=' + str(self.size)
+        info += ', mode=' + self.mode
+        return info
+
+
+class ComplexUpsamplingBilinear2d(ComplexUpsample):
+    def __init__(self, size=None, scale_factor=None):
+        super(ComplexUpsamplingBilinear2d, self).__init__(size, scale_factor, mode='bilinear', align_corners=True)
