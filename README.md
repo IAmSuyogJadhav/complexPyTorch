@@ -1,9 +1,21 @@
+# complexPyTorch
+
+A high-level toolbox for using complex valued neural networks in PyTorch. This fork implements a few more layers and some deep learning architectures. 
+
 ## To-Do
 * There is apparently a problem with backpropagation of complex layers ([see the issue](https://github.com/wavefrontshaping/complexPyTorch/issues/3)). The gradients calculated by torch's autograd do not match with what a complex differentiation gives. Need to implement a proper backward function for that purpose.
 
-# complexPyTorch
+## Updates
 
-A high-level toolbox for using complex valued neural networks in PyTorch. This fork implements a few more layers and some deep learning architectures. The following description is as-is from the original repository.
+* **14-06-2020** 
+    - Added Complex U-Net architecture, with ResNet backend. Adapted heavily from [qubvel/segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch/)
+    - Added `nn.ComplexBilinearUpsampling2D` and `nn.Identity` layers.
+* **01-06-2020**
+    - Added Complex ResNet architecture.
+
+---------
+
+The following description is as-is from the original repository.
 
 ## Complex Valued Networks with PyTorch
 
