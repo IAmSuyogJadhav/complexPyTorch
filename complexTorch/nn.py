@@ -11,9 +11,10 @@ Based on https://openreview.net/forum?id=H1T2hmZAb
 """
 
 import torch
-from torch.nn import Module, ModuleList, Parameter, init, Sequential
-from torch.nn import Conv2d, Linear, BatchNorm1d, BatchNorm2d
-from torch.nn import ConvTranspose2d
+# from torch.nn import Module, ModuleList, Parameter, init, Sequential
+# from torch.nn import Conv2d, Linear, BatchNorm1d, BatchNorm2d
+# from torch.nn import ConvTranspose2d
+from torch.nn import *
 from torch.nn.functional import relu, max_pool2d, dropout, dropout2d, avg_pool2d, interpolate
 
 
@@ -205,7 +206,6 @@ class Identity(Module):
     def __init__(self, *args, **kwargs):
         super(Identity, self).__init__()
 
-    @weak_script_method
     def forward(self, inr, ini):
         return inr, ini
 
@@ -421,14 +421,9 @@ class ComplexUpsample(Module):
     ** Very rudimentary. Basically interpolates real and imaginary parts separately. Might not be the right way to do it.
     """
     __constants__ = ['size', 'scale_factor', 'mode', 'align_corners', 'name']
-    name: str
-    size: _size_any_t
-    scale_factor: _ratio_any_t
-    mode: str
-    align_corners: bool
 
     def __init__(self, size=None, scale_factor=None, mode='nearest', align_corners=None):
-        super(Upsample, self).__init__()
+        super(ComplexUpsample, self).__init__()
         self.name = type(self).__name__
         self.size = size
         if isinstance(scale_factor, tuple):

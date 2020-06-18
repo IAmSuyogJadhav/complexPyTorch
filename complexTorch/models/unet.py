@@ -1,7 +1,7 @@
 from complexTorch.decoders import UnetDecoder
 from complexTorch.encoders import get_encoder
 from complexTorch.base.model import SegmentationModel
-from complexTorch.base.heads import SegmentationHead, ClassificationHead
+from complexTorch.base.heads import SegmentationHead
 
 
 class Unet(SegmentationModel):
@@ -45,6 +45,7 @@ class Unet(SegmentationModel):
         decoder_channels=(256, 128, 64, 32, 16),
         decoder_attention_type=None,
         in_channels=3,
+        upsampling=1,
         classes=1,
         activation=None,
         aux_params=None,
@@ -70,14 +71,15 @@ class Unet(SegmentationModel):
         self.segmentation_head = SegmentationHead(
             in_channels=decoder_channels[-1],
             out_channels=classes,
-            activation=activation,
             kernel_size=3,
+            upsampling=upsampling
         )
 
         if aux_params is not None:
-            self.classification_head = ClassificationHead(
-                in_channels=self.encoder.out_channels[-1], **aux_params
-            )
+#             self.classification_head = ClassificationHead(
+#                 in_channels=self.encoder.out_channels[-1], **aux_params
+#             )
+            self.classification_head = None
         else:
             self.classification_head = None
 

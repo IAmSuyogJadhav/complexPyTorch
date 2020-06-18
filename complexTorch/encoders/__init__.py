@@ -1,4 +1,5 @@
 from .resnet import resnet_encoders
+from . import utils 
 
 encoders = {}
 encoders.update(resnet_encoders)

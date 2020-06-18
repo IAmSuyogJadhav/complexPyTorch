@@ -1,8 +1,8 @@
-# import torch
+import torch
 import complexTorch.nn as nn
 import torch.nn.functional as F
 
-from complexTorch import modules as md
+from complexTorch.base import modules as md
 
 
 class DecoderBlock(nn.Module):
@@ -34,17 +34,16 @@ class DecoderBlock(nn.Module):
 
     def forward(self, xr, xi, skipr=None, skipi=None):
         xr, xi = F.interpolate(xr, scale_factor=2, mode="nearest"), F.interpolate(xi, scale_factor=2, mode="nearest")
-        if skipr is not None:
+        
+        if skipr is not None or skipi is not None:  # Skipr and Skipi are redundant. Need to get rid of one of them.
             xr = torch.cat([xr, skipr], dim=1)
-            xr = self.attention1(xr)
-        if skipi is not None:
             xi = torch.cat([xi, skipi], dim=1)
-            xi = self.attention1(xi)
+            xr, xi = self.attention1(xr, xi)
         
         xr, xi = self.conv1(xr, xi)
         xr, xi = self.conv2(xr, xi)
         xr, xi = self.attention2(xr, xi)
-        return x
+        return xr, xi
 
 
 class CenterBlock(nn.ComplexSequential):
@@ -121,7 +120,11 @@ class UnetDecoder(nn.Module):
         for i, decoder_block in enumerate(self.blocks):
             skip = skips[i] if i < len(skips) else None
             
-            skipr, skipi = skip
+            if isinstance(skip, list):  # If a list is received
+                skipr, skipi = skip[0], skip[1]
+            else:  # If a 'None' is received
+                skipr, skipi = skip, skip
+
             xr, xi = decoder_block(xr, xi, skipr, skipi)
 
         return xr, xi

@@ -26,7 +26,7 @@ class Conv2dReLU(nn.ComplexSequential):
             padding=padding,
             bias=not (use_batchnorm),
         )
-        relu = nn.ComplexReLU(inplace=True)
+        relu = nn.ComplexReLU()
 
         if use_batchnorm == "inplace":
 #             bn = InPlaceABN(out_channels, activation="leaky_relu", activation_param=0.0)

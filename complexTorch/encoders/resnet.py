@@ -24,10 +24,11 @@ import complexTorch.nn as nn
 from complexTorch.models.resnet import ResNet
 from complexTorch.models.resnet import BasicBlock
 from complexTorch.models.resnet import Bottleneck
+from .utils import EncoderMixin
 # from pretrainedmodels.models.torchvision_models import pretrained_settings
 
 
-class ResNetEncoder(ResNet):
+class ResNetEncoder(ResNet, EncoderMixin):
     def __init__(self, out_channels, depth=5, **kwargs):
         super().__init__(**kwargs)
         self._depth = depth
@@ -40,8 +41,8 @@ class ResNetEncoder(ResNet):
     def get_stages(self):
         return [
             nn.Identity(),
-            nn.Sequential(self.conv1, self.bn1, self.relu),
-            nn.Sequential(self.maxpool, self.layer1),
+            nn.ComplexSequential(self.conv1, self.bn1, self.relu),
+            nn.ComplexSequential(self.maxpool, self.layer1),
             self.layer2,
             self.layer3,
             self.layer4,
@@ -122,7 +123,7 @@ resnet_encoders = {
 #                 "std": [0.229, 0.224, 0.225],
 #                 "num_classes": 1000,
 #             }
-        },
+#         },
         "params": {
             "out_channels": (3, 64, 256, 512, 1024, 2048),
             "block": Bottleneck,

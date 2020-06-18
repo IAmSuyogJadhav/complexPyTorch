@@ -14,7 +14,8 @@ class SegmentationModel(torch.nn.Module):
         features = self.encoder(xr, xi)
         decoder_output = self.decoder(*features)
 
-        masks = self.segmentation_head(decoder_output)
+#         return decoder_output #DEBUG
+        masks = self.segmentation_head(*decoder_output)
 
         if self.classification_head is not None:
             labels = self.classification_head(features[-1])
