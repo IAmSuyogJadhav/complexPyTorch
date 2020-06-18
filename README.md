@@ -2,11 +2,44 @@
 
 A high-level toolbox for using complex valued neural networks in PyTorch. This fork implements a few more layers and some deep learning architectures. 
 
+## Example Usage (Complex UNet)
+```python
+import torch
+import complexTorch
+
+n_samples, channels, h, w = 2, 60, 256, 256 
+sample_batch = torch.ones([n_samples, channels, h, w, 2]).double()  # 2 for real and imaginary parts, respectively
+real, imag = sample_batch[..., 0].contiguous().to('cuda'), sample_batch[..., 1].contiguous().to('cuda')
+
+model = complexTorch.models.Unet(
+    encoder_name='resnet34',
+    encoder_depth=5,
+    decoder_use_batchnorm=True,
+    decoder_channels=(256, 128, 64, 32, 16),
+    decoder_attention_type=None,
+    in_channels=60,
+    upsampling=2,
+    classes=1,
+    aux_params=None,
+)
+model = model.double().to('cuda')
+
+# Test Forward pass
+out = model(real, imag)  # Returns two vectors, real and imaginary part respectively.
+print(out[0].shape)  # [2, 1, 512, 512]  (h, w = 512 here due to the upsampling being set to 2 in the model definition)
+
+# Test Backward pass
+lh = out[1].sum() + out[0].sum()
+lh.backward()
+```
+
 ## To-Do
 * There is apparently a problem with backpropagation of complex layers ([see the issue](https://github.com/wavefrontshaping/complexPyTorch/issues/3)). The gradients calculated by torch's autograd do not match with what a complex differentiation gives. Need to implement a proper backward function for that purpose.
 
 ## Updates
 
+* **18-06-2020**
+    - Fixed problems with the UNet architecture. A bug related to CUDNN was encountered. It was fixed in torch 1.5.0. Thus, the project now requires torch >=1.5.0.
 * **14-06-2020** 
     - Added Complex U-Net architecture, with ResNet backend. Adapted heavily from [qubvel/segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch/)
     - Added `nn.ComplexBilinearUpsampling2D` and `nn.Identity` layers.
@@ -32,7 +65,6 @@ Following [[C. Trabelsi et al., International Conference on Learning Representat
 * BatchNorm2d (Naive and Covariance approach)
 
 
-
 ## Syntax and usage
 
 The syntax is supposed to copy the one of the standard real functions and modules from PyTorch. 
@@ -48,86 +80,7 @@ This is implemented in `ComplexbatchNorm1D` and `ComplexbatchNorm2D` but using t
 The gain of using this approach, however, can be experimentally marginal compared to the naive approach which consists in simply performing the BatchNorm on both the real and imaginary part, which is available using `NaiveComplexbatchNorm1D` or `NaiveComplexbatchNorm2D`.
 
 
-## Example
-
-For illustration, here is a small example of a complex model.
-Note that in that example, complex values are not particularly useful, it just shows how one can handle complex ANNs.
-
-```python
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torchvision import datasets, transforms
-from complexLayers import ComplexBatchNorm2d, ComplexConv2d, ComplexLinear
-from complexFunctions import complex_relu, complex_max_pool2d
-
-batch_size = 64
-trans = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (1.0,))])
-train_set = datasets.MNIST('../data', train=True, transform=trans, download=True)
-test_set = datasets.MNIST('../data', train=False, transform=trans, download=True)
-
-train_loader = torch.utils.data.DataLoader(train_set, batch_size= batch_size, shuffle=True)
-test_loader = torch.utils.data.DataLoader(test_set, batch_size= batch_size, shuffle=True)
-
-class ComplexNet(nn.Module):
-    
-    def __init__(self):
-        super(ComplexNet, self).__init__()
-        self.conv1 = ComplexConv2d(1, 20, 5, 1)
-        self.bn  = ComplexBatchNorm2d(20)
-        self.conv2 = ComplexConv2d(20, 50, 5, 1)
-        self.fc1 = ComplexLinear(4*4*50, 500)
-        self.fc2 = ComplexLinear(500, 10)
-             
-    def forward(self,x):
-        xr = x
-        # imaginary part to zero
-        xi = torch.zeros(xr.shape, dtype = xr.dtype, device = xr.device)
-        xr,xi = self.conv1(xr,xi)
-        xr,xi = complex_relu(xr,xi)
-        xr,xi = complex_max_pool2d(xr,xi, 2, 2)
-        
-        
-        xr,xi = self.bn(xr,xi)
-        xr,xi = self.conv2(xr,xi)
-        xr,xi = complex_relu(xr,xi)
-        xr,xi = complex_max_pool2d(xr,xi, 2, 2)
-        
-        xr = xr.view(-1, 4*4*50)
-        xi = xi.view(-1, 4*4*50)
-        xr,xi = self.fc1(xr,xi)
-        xr,xi = complex_relu(xr,xi)
-        xr,xi = self.fc2(xr,xi)
-        # take the absolute value as output
-        x = torch.sqrt(torch.pow(xr,2)+torch.pow(xi,2))
-        return F.log_softmax(x, dim=1)
-    
-device = torch.device("cuda:0" )
-model = ComplexNet().to(device)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
-
-def train(model, device, train_loader, optimizer, epoch):
-    model.train()
-    for batch_idx, (data, target) in enumerate(train_loader):
-        data, target = data.to(device), target.to(device)
-        optimizer.zero_grad()
-        output = model(data)
-        loss = F.nll_loss(output, target)
-        loss.backward()
-        optimizer.step()
-        if batch_idx % 1000 == 0:
-            print('Train Epoch: {:3} [{:6}/{:6} ({:3.0f}%)]\tLoss: {:.6f}'.format(
-                epoch,
-                batch_idx * len(data), 
-                len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), 
-                loss.item())
-            )
-
-# Run training on 50 epochs
-for epoch in range(50):
-    train(model, device, train_loader, optimizer, epoch)
-```
+>  Example code removed as the code has undergone an overhaul in this repo.
         
 ## Todo
 * Script ComplexBatchNorm for improved efficiency ([jit doc](https://pytorch.org/docs/stable/jit.html))
